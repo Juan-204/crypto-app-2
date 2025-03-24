@@ -14,8 +14,11 @@ class FavoriteController extends Controller
         // Validar la solicitud
         $request->validate([
             'name' => 'required|string', // Nombre de la criptomoneda
-            'symbol' => 'required|string|unique:cryptocurrencies,symbol', // Símbolo de la criptomoneda
+            'symbol' => 'required|string|', // Símbolo de la criptomoneda
+            'user_id' => 'required'
         ]);
+
+        $userId = $request->user_id;
 
         // Buscar o crear la criptomoneda en la base de datos
         $cryptocurrency = Cryptocurrency::firstOrCreate(
@@ -24,7 +27,7 @@ class FavoriteController extends Controller
         );
 
         // Verificar si la criptomoneda ya está en favoritos del usuario
-        $existingFavorite = Favorite::where('user_id', Auth::id())
+        $existingFavorite = Favorite::where('user_id', $userId)
             ->where('cryptocurrency_id', $cryptocurrency->id)
             ->first();
 
@@ -36,7 +39,7 @@ class FavoriteController extends Controller
 
         // Crear el favorito
         $favorite = Favorite::create([
-            'user_id' => Auth::id(),
+            'user_id' => $userId,
             'cryptocurrency_id' => $cryptocurrency->id,
         ]);
 
@@ -46,13 +49,21 @@ class FavoriteController extends Controller
         ], 201);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        // Obtener los favoritos del usuario con la información de la criptomoneda
-        $favorites = Favorite::where('user_id', Auth::id())
-            ->with('cryptocurrency')
-            ->get();
+        $userId = $request->query('user_id'); // Obtener de query param o de Auth::id()
+
+        if (!$userId) {
+            return response()->json(['message' => 'No autenticado'], 401);
+        }
+
+        $favorites = Favorite::where('user_id', $userId)
+        ->with(['cryptocurrency' => function ($query) {
+            $query->with('latestData'); // Importante incluir esto
+        }])
+        ->get();
 
         return response()->json($favorites);
     }
+
 }

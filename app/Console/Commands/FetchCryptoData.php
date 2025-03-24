@@ -37,7 +37,7 @@ class FetchCryptoData extends Command
         //parametros de la solicitud
         $parameters = [
             'start' => '1',
-            'limit' => '10',
+            'limit' => '100',
             'convert' => 'USD',
         ];
 
