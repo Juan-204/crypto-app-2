@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\CryptocurrencyController;
+use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\HistoricalDataController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -17,3 +20,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::get('/cryptocurrencies', [CryptocurrencyController::class, 'index']);
+Route::post('/favorites', [FavoriteController::class, 'store']);
+Route::get('/favoritesIndex', [FavoriteController::class, 'index']);
+Route::get('/historical-data/{cryptocurrency}', [HistoricalDataController::class, 'show']);
+
