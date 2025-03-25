@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cryptocurrency;
-use Illuminate\Http\Request;
+use App\Models\HistoricalData;
+
 
 class HistoricalDataController extends Controller
 {
-    public function show(Cryptocurrency $cryptocurrency)
+    public function show($cryptocurrencyId)
     {
-        $historicalData = $cryptocurrency->historicalData()->orderBy('timestamp', 'asc')->get();
+        $historicalData = HistoricalData::where('cryptocurrency_id', $cryptocurrencyId)
+            ->orderBy('timestamp', 'DESC')
+            ->get();
 
         return response()->json($historicalData);
     }
+
+
 }
