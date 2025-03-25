@@ -2,64 +2,61 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 const SelectCrypto = ({ auth, onAddFavorite }) => {
-    const [query, setQuery] = useState("");
+    const [search, setSearch] = useState(""); // Estado del input
     const [cryptos, setCryptos] = useState([]);
     const [filteredCryptos, setFilteredCryptos] = useState([]);
 
     useEffect(() => {
-        axios.get("/api/getcrypto")
+        axios.get("/api/getcrypto") // Llama al backend para obtener las criptos
             .then(response => setCryptos(response.data))
             .catch(error => console.error("Error fetching cryptos:", error));
     }, []);
 
-    useEffect(() => {
-        if (query.trim() === "") {
-            setFilteredCryptos([]);
-        } else {
+    const handleSearchChange = (e) => {
+        const value = e.target.value;
+        setSearch(value);
+
+        if (value.length > 0) {
             setFilteredCryptos(
                 cryptos.filter(crypto =>
-                    crypto.name.toLowerCase().includes(query.toLowerCase()) ||
-                    crypto.symbol.toLowerCase().includes(query.toLowerCase())
+                    crypto.name.toLowerCase().includes(value.toLowerCase()) ||
+                    crypto.symbol.toLowerCase().includes(value.toLowerCase())
                 )
             );
+        } else {
+            setFilteredCryptos([]);
         }
-    }, [query, cryptos]);
+    };
 
-    const handleSelect = (crypto) => {
-        setQuery(crypto.name);
-        setFilteredCryptos([]);
-
-        // Enviar a favoritos
+    const handleSelectCrypto = (crypto) => {
         axios.post("/api/favorites", {
-            user_id: auth.user.id,
-            crypto_id: crypto.id,
             name: crypto.name,
-            symbol: crypto.symbol
+            symbol: crypto.symbol,
+            user_id: auth.user.id
         })
-        .then(() => {
-            console.log("Agregado a favoritos:", crypto);
-            onAddFavorite(crypto); // Llama a la función en el Dashboard
+        .then(response => {
+            onAddFavorite(crypto); // Agregar al estado global
+            setSearch(""); // Limpiar el campo del input después de seleccionar
+            setFilteredCryptos([]); // Ocultar la lista de sugerencias
         })
-        .catch(error => console.error("Error al agregar a favoritos:", error));
+        .catch(error => console.error("Error adding favorite:", error));
     };
 
     return (
-        <div className="relative w-full max-w-md">
+        <div className="relative">
             <input
                 type="text"
-                className="w-full p-2 border rounded-lg shadow-sm focus:ring focus:ring-blue-300"
+                value={search}
+                onChange={handleSearchChange}
                 placeholder="Buscar criptomoneda..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                className="w-full p-2 border rounded-md"
             />
             {filteredCryptos.length > 0 && (
-                <ul className="absolute w-full bg-white border rounded-lg shadow-md mt-1 max-h-60 overflow-auto z-10">
-                    {filteredCryptos.map((crypto) => (
-                        <li
-                            key={crypto.id}
-                            className="p-2 hover:bg-blue-100 cursor-pointer"
-                            onClick={() => handleSelect(crypto)}
-                        >
+                <ul className="absolute w-full bg-white border rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
+                    {filteredCryptos.map(crypto => (
+                        <li key={crypto.id}
+                            onClick={() => handleSelectCrypto(crypto)}
+                            className="p-2 cursor-pointer hover:bg-gray-200">
                             {crypto.name} ({crypto.symbol})
                         </li>
                     ))}

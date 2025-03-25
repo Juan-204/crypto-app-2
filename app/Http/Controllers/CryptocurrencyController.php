@@ -9,11 +9,6 @@ use Illuminate\Support\Facades\Http;
 
 class CryptocurrencyController extends Controller
 {
-    public function index()
-    {
-        $cryptocurrencies = Cryptocurrency::all();
-        return response()->json($cryptocurrencies);
-    }
 
 
     public function getCryptos()
@@ -24,10 +19,17 @@ class CryptocurrencyController extends Controller
                 'X-CMC_PRO_API_KEY' => env('API_KEY_COINMAKERCAP'),
             ])->get('https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest');
 
-            return $response->json();
+            // Devolver solo los campos necesarios
+            return collect($response->json()['data'] ?? [])->map(function ($crypto) {
+                return [
+                    'id'     => $crypto['id'],
+                    'name'   => $crypto['name'],
+                    'symbol' => $crypto['symbol'],
+                ];
+            })->toArray();
         });
 
-        return response()->json($cryptos['data'] ?? []);
+        return response()->json($cryptos);
     }
 
 }

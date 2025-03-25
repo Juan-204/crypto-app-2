@@ -3,29 +3,11 @@ import SelectCrypto from "@/Components/SelectCrypto";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import axios from "axios";
+import CryptoAccordion from "@/Components/CryptoAccordion";
 
 export default function Dashboard({ auth }) {
     const [favorites, setFavorites] = useState([]);
-
-    const formatFinancialNumber = (value, isCurrency = true, isPercent = false) => {
-        if (value === "N/A" || value === null || value === undefined) return "N/A";
-
-        const num = parseFloat(value);
-        if (isNaN(num)) return "N/A";
-
-        if (isPercent) {
-        return `${num.toFixed(2)}%`;
-        }
-
-        const formatter = Intl.NumberFormat('en-US', {
-        notation: "compact",
-        maximumFractionDigits: 2,
-        minimumFractionDigits: 2
-        });
-
-        return isCurrency ? `$${formatter.format(num)}` : formatter.format(num);
-    };
-
+    const [refreshInterval, setRefreshInterval] = useState(null)
 
     // Función para obtener la lista de favoritos con datos actualizados
     const fetchFavorites = () => {
@@ -39,6 +21,7 @@ export default function Dashboard({ auth }) {
         fetchFavorites();
 
         const interval = setInterval(fetchFavorites, 60000);
+        setRefreshInterval(interval)
 
         // Limpiar el intervalo cuando el componente se desmonta
         return () => clearInterval(interval);
@@ -56,48 +39,37 @@ export default function Dashboard({ auth }) {
                 }
             }
         ]);
-    };
+
+
+        fetchFavorites();
+
+        if (refreshInterval) {
+            clearInterval(refreshInterval)
+        }
+        const newInterval = setInterval(fetchFavorites, 60000)
+        setRefreshInterval(newInterval)
+    }
 
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Dashboard</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Favoritos</h2>}
         >
-            <Head title="Dashboard" />
+            <Head title="Favoritos" />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <SelectCrypto auth={auth} onAddFavorite={handleAddFavorite} />
 
                     <h2 className="text-xl font-semibold mt-6">Favoritos</h2>
-                    <ul className="mt-2">
+                    <div className="mt-2">
                         {favorites.map((crypto) => (
-                            <li key={crypto.id} className="p-2 border rounded-md my-1">
-                                {crypto.cryptocurrency ? (
-                                    <>
-                                        {crypto.cryptocurrency.name} ({crypto.cryptocurrency.symbol}) -
-                                        <span className="text-green-600 font-semibold">
-                                        {formatFinancialNumber(crypto.cryptocurrency.latest_data?.price)}
-                                        </span><br/>
-
-                                        <span className="text-green-600 font-semibold">
-                                        {formatFinancialNumber(crypto.cryptocurrency.latest_data?.market_cap)}
-                                        </span><br/>
-
-                                        <span className="text-green-600 font-semibold">
-                                        {formatFinancialNumber(crypto.cryptocurrency.latest_data?.percent_change_24h, false, true)}
-                                        </span><br/>
-
-                                        <span className="text-green-600 font-semibold">
-                                        {formatFinancialNumber(crypto.cryptocurrency.latest_data?.volume)}
-                                        </span><br/>
-                                    </>
-                                ) : (
-                                    <span className="text-gray-500">Cargando...</span>
-                                )}
-                            </li>
+                            <CryptoAccordion
+                            key={crypto.id}
+                            crypto={crypto}
+                            />
                         ))}
-                    </ul>
+                    </div>
                 </div>
             </div>
         </AuthenticatedLayout>
